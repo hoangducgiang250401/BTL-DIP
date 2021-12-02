@@ -8,7 +8,7 @@ import imutils
 #  - min_text_height_limit
 #  - max_text_height_limit
 #  - cell_threshold
-#  - min_columns
+#  -arrin_columns
 
 
 def pre_process_image(img, save_in_file, morph_size=(3, 1)):
@@ -58,32 +58,50 @@ def find_text_boxes(pre, min_text_height_limit=3, max_text_height_limit=20):
         
         if min_text_height_limit < h < max_text_height_limit and 3 < w < 500 and 20 < area < 2000:
             i += 1
-            print(cv2.contourArea(contour),cv2.boundingRect(contour))
             htb = box[3] + htb
+            # print(cvarrcontourArea(contour),cv2.boundingRect(contour))
             boxes.append(box)
     # print(htb/i )
     return boxes
 
 
-def find_table_in_boxes(boxes, cell_threshold=10, min_columns=2):
-    rows = {}
+def find_table_in_boxes(boxes, cell_threshold=30, min_columns=0):
     cols = {}
+    rows = {} 
 
     # Clustering the bounding boxes by their positions
     for box in boxes:
         (x, y, w, h) = box
         col_key = x // cell_threshold
         row_key = y // cell_threshold
-        cols[row_key] = [box] if col_key not in cols else cols[col_key] + [box]
+        
+        cols[col_key] = [box] if col_key not in cols else cols[col_key] + [box]
         rows[row_key] = [box] if row_key not in rows else rows[row_key] + [box]
-
+    #print(rows.values())
     # Filtering out the clusters having less than 2 cols
     table_cells = list(filter(lambda r: len(r) >= min_columns, rows.values()))
     # Sorting the row cells by x coord
     table_cells = [list(sorted(tb)) for tb in table_cells]
     # Sorting rows by the y coord
     table_cells = list(sorted(table_cells, key=lambda r: r[0][1]))
-
+    #print(rows[0])
+    last = 0
+    arr = []
+    i = 0
+    while i < len(rows):
+        if(abs(rows[i][0][1] - rows[i+1][0][1]) < 30):
+            #rows[i+1].append(rows[i])
+            # print("nho hon 30")
+            # print(rows[i][0])
+            # print(rows[i+1][0])
+            # print("-----------------------------------")
+            arr.append((rows[i]+rows[i+1]))
+            i+=1
+        else:
+            arr.append((rows[i]))
+        i += 1
+    print(arr)
+    #parrnt(rows.values())
     return table_cells
 
 
@@ -137,7 +155,7 @@ if "_main_" == "_main_":
         (x, y, w, h) = box
         cv2.rectangle(vis, (x, y), (x + w - 2, y + h - 2), (0, 255, 0), 1)
     
-    print(cells)
+    # print(cells)
     cv2.rectangle(vis, (212, 18), (212 + 71, 18 + 17 ), (255, 255, 0), 1)
     for line in hor_lines:
         [x1, y1, x2, y2] = line

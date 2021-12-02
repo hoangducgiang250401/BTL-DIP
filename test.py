@@ -10,13 +10,13 @@ def pre_process_image(img,morph_size):
     return thresh
 
 def find_Contours(thresh):
-    min_text_height_limit=1
-    max_text_height_limit=20
+    min_text_height_limit=3
+    max_text_height_limit=30
 
-    min_text_width_limit=1
+    min_text_width_limit=3
     max_text_width_limit=500
 
-    min_text_area_limit=50
+    min_text_area_limit=10
     max_text_area_limit=2000
 
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -105,13 +105,13 @@ if "BTL-DIP" == "BTL-DIP":
     img = cv2.imread("data/public/" + imgname +".png")
     thresh = pre_process_image(img,(4,1))
     height_text = height_text(thresh)
-    thresh2 = pre_process_image(img,(round(height_text/2) + 1 ,1))
-    boxes = find_Contours(thresh)
+    thresh2 = pre_process_image(img,(round(height_text/2),1))
+    boxes = find_Contours(thresh2)
     arr = boxes
-    results = clearBoxes(arr,height_text)
-    print(results)
+    # results = clearBoxes(arr,height_text)
+    # print(results)
 
-    for box in results:
+    for box in boxes:
         (x, y, w, h) = box
         cv2.rectangle(img, (x, y), (x + w -1 , y + h -1), (0, 0, 255), 1)
 
