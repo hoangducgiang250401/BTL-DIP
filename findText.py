@@ -36,10 +36,10 @@ def findText(cell):
     # Load image, grayscale, Gaussian blur, adaptive threshold
     image = cv2.imread(cell)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (9,9), 0)
-    thresh = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,11,30)
+    blur = cv2.GaussianBlur(gray, (1,1), 0)
+    thresh = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,11,1)
     # Dilate to combine adjacent text contours
-    withKernel = 15
+    withKernel = 3
     heightKernel = 1
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (withKernel,heightKernel))
     dilate = cv2.dilate(thresh, kernel, iterations=1)
@@ -51,14 +51,14 @@ def findText(cell):
     denta = heightKernel//2
     for c in cnts:
         area = cv2.contourArea(c)
-        # print(area)
-        if area > 1000:
+        print(area)
+        if area > 100:
             # maxArea = area
             a = [x,y,w,h] = cv2.boundingRect(c)
-            cv2.rectangle(image, (x + denta, y + denta), (x + w - denta, y + h - denta), (36,255,12), 3)
+            cv2.rectangle(image, (x + denta, y + denta), (x + w - denta, y + h - denta), (36,255,12), 1)
     # a = xu_ly_mo_rong(image,a)
     
-    print("giá trị lớn nhấT : ",maxArea)
+    # print("giá trị lớn nhấT : ",maxArea)
     cv2.imshow('thresh', thresh)
     cv2.imshow('dilate', dilate)
     cv2.imshow('image', image)
@@ -69,4 +69,4 @@ def findText(cell):
 
 
 # findText('test3.png')
-print(findText('data/33.png'))
+print(findText('data/public/75080.png'))
