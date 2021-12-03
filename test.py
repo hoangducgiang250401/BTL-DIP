@@ -2,16 +2,18 @@ import cv2
 import numpy as ny
 import xml.etree.ElementTree as ET
 
+
+
 def pre_process_image(img,morph_size):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 1)
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morph_size)
+    kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, morph_size)
     thresh = cv2.dilate(thresh, kernel, iterations=1)
     return thresh
 
 def find_Contours(thresh):
     min_text_height_limit=3
-    max_text_height_limit=30
+    max_text_height_limit=18
 
     min_text_width_limit=3
     max_text_width_limit=500
@@ -44,12 +46,14 @@ def height_text(thresh,with_ = 3,height_ = 1):
     chieucaotb = get_htb(boxes)
     return chieucaotb
 
-def testDNA(box1,box2,r):
+def testDNA(box1,box2,r,d):
     (x, y, w, h) = box1
     (x1, y1, w1, h1) = box2
+    x = x - r
+    y = y - d
+    w = w + 2*r
+    h = h + 2*d
     if (x+w >= x1) and (x1+w1 >= x) and (y+h >= y1) and (y1+h1 >= y):
-        return True
-    if abs(x1 - (x + w)) < r or abs(x - (x1 + w1)) < r:
         return True
     return False
 
@@ -71,18 +75,39 @@ def makeFriend(box1,box2):
     w0 = max(x + w,x1 + w1) - min(x,x1)
     h0 = max(y + h,y1 + h1) - min(y,y1)
     newBox = (x0,y0,w0,h0)
-    # print("new box ",newBox)
+    print("new box: ",newBox)
     return newBox
 
+
 def clearBoxes(boxes,r):
-    for i in range(len(boxes)-1):
-        if i == (len(boxes)-1):
-            return boxes
-        if testDNA(boxes[i],boxes[i + 1],r):
-            newBox = makeFriend(boxes[i],boxes[i + 1])
-            boxes[i] = newBox
-            boxes.remove(boxes[i + 1])
-            # i = i -1
+    index = len(boxes)-1
+    i = len(boxes)-1
+    boxtrash = []
+    newBoxes = []
+    while index >=0:
+        # while i >=0:
+        #     if testDNA(boxes[i],boxes[index],5,3) and i != index:
+        #         newBoxes.append(makeFriend(boxes[i],boxes[index]))
+        #         boxtrash.append(boxes[i])
+        #         boxtrash.append(boxes[index])
+        #         # index += 1
+        #         break
+        #     i -=1
+        for i in range(len(boxes)):
+            if testDNA(boxes[i],boxes[index],5,3) and i != index:
+                newBoxes.append(makeFriend(boxes[i],boxes[index]))
+                boxtrash.append(boxes[i])
+                boxtrash.append(boxes[index])
+                # index += 1
+                break
+        index -= 1
+    
+    for box in newBoxes:
+        boxes.append(box)
+    
+    for box in boxtrash:
+        if box in boxes:
+            boxes.remove(box)
     return boxes
 
 def readXml(pathXml):
@@ -101,23 +126,22 @@ def readXml(pathXml):
     return a
 
 if "BTL-DIP" == "BTL-DIP":
-    imgname = "49436"
+    imgname = "32"
     img = cv2.imread("data/public/" + imgname +".png")
-    thresh = pre_process_image(img,(4,1))
+    thresh = pre_process_image(img,(1,1))
     height_text = height_text(thresh)
-    thresh2 = pre_process_image(img,(round(height_text/2),1))
+    thresh2 = pre_process_image(img,(round(height_text/2)-1,1))
     boxes = find_Contours(thresh2)
-    arr = boxes
-    # results = clearBoxes(arr,height_text)
-    # print(results)
-
+    results = clearBoxes(boxes,height_text)
+    # results = clearBoxes(boxes,height_text)
+    print(boxes)
     for box in boxes:
         (x, y, w, h) = box
         cv2.rectangle(img, (x, y), (x + w -1 , y + h -1), (0, 0, 255), 1)
 
-    pathXml = 'data/public/' + imgname+'.xml'
-    a = readXml(pathXml)
 
+    # pathXml = 'data/public/' + imgname+'.xml'
+    # a = readXml(pathXml)
     # for x in a:
     #     cv2.rectangle(img, (x[0], x[1]), (x[2], x[3]), (36,255,12), 1)
 
