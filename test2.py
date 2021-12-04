@@ -27,7 +27,7 @@ def getAllOverlaps(boxes, bounds, index):
                 overlaps.append(a);
     return overlaps;
 
-img = cv2.imread("data/public/75094.png")
+img = cv2.imread("data/public/34.png")
 orig = np.copy(img);
 blue, green, red = cv2.split(img)
 
@@ -58,14 +58,14 @@ for component in zip(contours, hierarchy):
 
 # filter out excessively large boxes
 filtered = []
-max_area = 30000;
+max_area = 2000;
 for box in boxes:
     w = box[1][0] - box[0][0];
     h = box[1][1] - box[0][1];
     if w*h < max_area:
         filtered.append(box);
 boxes = filtered;
-
+# print(boxes)
 # go through the boxes and start merging
 merge_margin = 4;
 
@@ -76,22 +76,6 @@ points = [[[0,0]]];
 while not finished:
     # set end con
     finished = True;
-
-    # check progress
-    print("Len Boxes: " + str(len(boxes)));
-
-    # draw boxes # comment this section out to run faster
-    copy = np.copy(orig);
-    for box in boxes:
-        cv2.rectangle(copy, tup(box[0]), tup(box[1]), (0,200,0), 1);
-    cv2.rectangle(copy, tup(highlight[0]), tup(highlight[1]), (0,0,255), 2);
-    for point in points:
-        point = point[0];
-        cv2.circle(copy, tup(point), 4, (255,0,0), -1);
-    cv2.imshow("Copy", copy);
-    key = cv2.waitKey();
-    if key == ord('q'):
-        break;
 
     # loop through boxes
     index = len(boxes) - 1;
@@ -116,14 +100,20 @@ while not finished:
             # convert to a contour
             con = [];
             overlaps.append(index);
+        #<--!BEGIN: lấy khối tổng quát -->
+            # print(overlaps)
             for ind in overlaps:
                 tl, br = boxes[ind];
+                # print("tl",tl,"br",br)
                 con.append([tl]);
                 con.append([br]);
+            # print("con",con)
             con = np.array(con);
-
+            # print("con : ",con)
             # get bounding rect
             x,y,w,h = cv2.boundingRect(con);
+
+        #<--!END: lấy khối tổng quát -->
 
             # stop growing
             w -= 1;
@@ -138,6 +128,7 @@ while not finished:
             overlaps.sort(reverse = True);
             for ind in overlaps:
                 del boxes[ind];
+            ## chèn khối box merged
             boxes.append(merged);
 
             # set flag

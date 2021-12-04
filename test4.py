@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 
 
-def pre_process_image(img,morph_size):
+def processImage(img,morph_size):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 1)
     kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, morph_size)
@@ -18,7 +18,7 @@ def find_Contours(thresh):
     min_text_width_limit=3
     max_text_width_limit=500
 
-    min_text_area_limit=10
+    min_text_area_limit=1
     max_text_area_limit=2000
 
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -39,83 +39,78 @@ def get_htb(boxes):
         sum_height = sum_height + box[3]
     return sum_height/lenboxes
 
+def lineSpacing(boxes):
+    boxes.sort(key=lambda x: x[1], reverse=False)
+    MaxLine = 0
+    for i in range(len(boxes)-1):
+        
+
+
+
 def height_text(thresh,with_ = 3,height_ = 1):
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (with_, height_))
     thresh = cv2.dilate(thresh, kernel, iterations=1)
     boxes = find_Contours(thresh)
+    print(boxes)
+    # line_spacing = lineSpacing(boxes)
     chieucaotb = get_htb(boxes)
     return chieucaotb
 
 def testDNA(box1,box2):
     (x, y, w, h) = box1
     (x1, y1, w1, h1) = box2
-    x = x
-    y = y
-    w = w
-    h = h
     if (x+w >= x1) and (x1+w1 >= x) and (y+h >= y1) and (y1+h1 >= y):
         return True
     return False
 
-def max(a,b):
-    if a > b:
-        return a
-    return b
+def getAllOverlaps(boxes,bounds, index):
+    overlaps = []
+    for i in range(len(boxes)):
+            if testDNA(bounds, boxes[i]):
+                overlaps.append(boxes[i])
+    return overlaps
 
-def min(a,b):
-    if a < b:
-        return a
-    return b
-
-def makeFriend(box1,box2):
-    (x, y, w, h) = box1
-    (x1, y1, w1, h1) = box2
-    x0 = min(x,x1)
-    y0 = min(y,y1)
-    w0 = max(x + w,x1 + w1) - min(x,x1)
-    h0 = max(y + h,y1 + h1) - min(y,y1)
-    newBox = (x0,y0,w0,h0)
-    print("new box: ",newBox)
-    return newBox
-
-def getAllOverlaps(boxes, bounds, index):
-    overlaps = [];
-    for a in range(len(boxes)):
-        if a != index:
-            if testDNA(bounds, boxes[a]):
-                overlaps.append(a);
-    return overlaps;
 
 def clearBoxes(boxes,r,d):
+    finished = False
+    while not finished:
+        finished = True
 
-    # index = len(boxes)-1 ##lấy độ dài vong lặp
-    # i = len(boxes)-1    
-    # boxtrash = []   ## hình chữ nhật cần xoá
-    # newBoxes = []
-    # while index >=0:
-    #     # while i >=0:
-    #     #     if testDNA(boxes[i],boxes[index],5,3) and i != index:
-    #     #         newBoxes.append(makeFriend(boxes[i],boxes[index]))
-    #     #         boxtrash.append(boxes[i])
-    #     #         boxtrash.append(boxes[index])
-    #     #         # index += 1
-    #     #         break
-    #     #     i -=1
-    #     for i in range(len(boxes)):
-    #         if testDNA(boxes[i],boxes[index],5,7) and i != index:
-    #             newBoxes.append(makeFriend(boxes[i],boxes[index]))
-    #             boxtrash.append(boxes[i])
-    #             boxtrash.append(boxes[index])
-    #             # index += 1
-    #             break
-    #     index -= 1
-    
-    # for box in newBoxes:
-    #     boxes.append(box)
-    
-    # for box in boxtrash:
-    #     if box in boxes:
-    #         boxes.remove(box)
+        index = len(boxes)-1 ## lấy độ dài vong lặp
+        while index >=0:
+            # print(len(boxes))
+            # print(index)
+            # print("befor:",boxes[index])
+            (x, y, w, h) = boxes[index]
+            x -= r
+            y -= d
+            w += 2*r
+            h += 2*d
+            # print("after : ",boxes[index])
+            overlaps = getAllOverlaps(boxes,(x, y, w, h),index)
+            # print("box overlaps: ",overlaps)
+            con = []
+            for box in overlaps:
+                (x1,y1,w1,h1) = box
+                # print("box",box)
+                tl = [x1,y1]
+                br = [x1 + w1, y1 + h1]
+                # print(tl,br)
+                con.append(tl)
+                con.append(br)
+            con = ny.array(con)
+            (x2,y2,w2,h2) = cv2.boundingRect(con)
+            # print("box merged: ",cv2.boundingRect(con))
+            for ind in overlaps:
+                    if ind in boxes:
+                        boxes.remove(ind)
+            boxes.append((x2,y2,w2-1,h2-1))
+            if len(overlaps) > 1:
+                finished = False;
+                break
+            # print(overlaps)
+            index -= 1
+
     return boxes
 
 def readXml(pathXml):
@@ -134,19 +129,19 @@ def readXml(pathXml):
     return a
 
 if "BTL-DIP" == "BTL-DIP":
-    imgname = "32"
+    imgname = "34"
     img = cv2.imread("data/public/" + imgname +".png")
-    thresh = pre_process_image(img,(1,1))
+    thresh = processImage(img,(1,1))
     height_text = height_text(thresh)
-    thresh2 = pre_process_image(img,(round(height_text/2)-1,1))
+    letter_spacing = round(height_text*0.7)
+    line_spacing =  round(height_text*0.6)
+    thresh2 = processImage(img,(round(height_text/2.5),1))
     boxes = find_Contours(thresh2)
-    # results = clearBoxes(boxes,height_text,7)
-    # results = clearBoxes(boxes,height_text)
-    print(boxes)
-    for box in boxes:
+    results = clearBoxes(boxes,letter_spacing,line_spacing)
+    # print(boxes)
+    for box in results:
         (x, y, w, h) = box
-        cv2.rectangle(img, (x, y), (x + w -1 , y + h -1), (0, 0, 255), 1)
-
+        cv2.rectangle(img, (x, y), (x + w -1, y + h -1), (0, 0, 255), 1)
 
     # pathXml = 'data/public/' + imgname+'.xml'
     # a = readXml(pathXml)
