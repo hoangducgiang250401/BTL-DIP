@@ -39,10 +39,10 @@ def get_htb(boxes):
         sum_height = sum_height + box[3]
     return sum_height/lenboxes
 
-def lineSpacing(boxes):
-    boxes.sort(key=lambda x: x[1], reverse=False)
-    MaxLine = 0
-    for i in range(len(boxes)-1):
+# def lineSpacing(boxes):
+#     boxes.sort(key=lambda x: x[1], reverse=False)
+#     MaxLine = 0
+#     for i in range(len(boxes)-1):
         
 
 
