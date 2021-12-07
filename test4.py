@@ -2,11 +2,49 @@ import cv2
 import numpy as ny
 import xml.etree.ElementTree as ET
 
+def moreThanZero(int1, int2):
+    if ((int1 - int2) > 0):
+        return int1 - int2
+    return int2 - int1
 
+def result(array1,array2):
+    
+    resultArray = []
+    #(0,3) (2,1)
+    for solution, answer in zip(array1, array2):
+        left_x = max(solution[0], answer[0])
+        top_y = min(solution[1], answer[1])
+        right_x = min(solution[2], answer[2])
+        bottom_y = max(solution[3], answer[3])
+
+        intersectionArea = moreThanZero(left_x, right_x) * moreThanZero(top_y, bottom_y)
+
+        solutionArea = moreThanZero(solution[0], solution[3]) * moreThanZero(solution[1], solution[2])
+
+        answerArea = moreThanZero(answer[0], answer[3]) * moreThanZero(answer[1], answer[2])
+        
+        resultArray.append(intersectionArea / float(solutionArea + answerArea- intersectionArea))
+
+    return resultArray
+
+def final(a,c):
+    # a.sort(key=lambda x: x[1], reverse=False)
+    # c.sort(key=lambda x: x[1], reverse=False)
+    resultArray = result(a,c)
+
+    resultValue = 0
+    
+    for ite in resultArray:
+        resultValue += ite   
+
+    resultValue /= len(resultArray)
+
+    return resultValue
 
 def processImage(img,morph_size):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 1)
+    # blur = cv2.GaussianBlur(gray, (9,9), 0)
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 10)
     kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, morph_size)
     thresh = cv2.dilate(thresh, kernel, iterations=1)
     return thresh
@@ -41,22 +79,25 @@ def get_htb(boxes):
 
 def lineSpacing(boxes):
     boxes.sort(key=lambda x: x[1], reverse=False)
-    MaxLine = 0
+    # print(boxes)
+    MaxLine = 1000
     for i in range(len(boxes)-1):
+        print(MaxLine)
+        # print((boxes[i + 1][1] - boxes[i][1]))
+        if MaxLine > (boxes[i + 1][1] - boxes[i][1]) > 10:
+            MaxLine = (boxes[i + 1][1] - boxes[i][1])
+    return MaxLine
         
 
-
-
-def height_text(thresh,with_ = 3,height_ = 1):
+def getCorrection(thresh,with_ = 3,height_ = 1):
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (with_, height_))
     thresh = cv2.dilate(thresh, kernel, iterations=1)
     boxes = find_Contours(thresh)
-    print(boxes)
-    # line_spacing = lineSpacing(boxes)
+    line_spacing = lineSpacing(boxes)
     chieucaotb = get_htb(boxes)
-    return chieucaotb
+    return [chieucaotb,line_spacing]
 
-def testDNA(box1,box2):
+def testDNA(box1,box2,boxes):
     (x, y, w, h) = box1
     (x1, y1, w1, h1) = box2
     if (x+w >= x1) and (x1+w1 >= x) and (y+h >= y1) and (y1+h1 >= y):
@@ -66,7 +107,7 @@ def testDNA(box1,box2):
 def getAllOverlaps(boxes,bounds, index):
     overlaps = []
     for i in range(len(boxes)):
-            if testDNA(bounds, boxes[i]):
+            if testDNA(bounds, boxes[i],boxes):
                 overlaps.append(boxes[i])
     return overlaps
 
@@ -129,12 +170,20 @@ def readXml(pathXml):
     return a
 
 if "BTL-DIP" == "BTL-DIP":
-    imgname = "34"
+    # imgname = "32"
+    imgname = "75094"
+    # imgname = "34"
     img = cv2.imread("data/public/" + imgname +".png")
+    pathXml = 'data/public/' + imgname+'.xml'
+    
     thresh = processImage(img,(1,1))
-    height_text = height_text(thresh)
-    letter_spacing = round(height_text*0.7)
-    line_spacing =  round(height_text*0.6)
+    correction = getCorrection(thresh)
+    # lấy thông số text
+    height_text = correction[0]
+    lineToLine = correction[1]
+    letter_spacing = round(height_text*1.5)
+    line_spacing =  lineToLine - round(height_text*1.6)
+    # xử lý theo thông số lấy được
     thresh2 = processImage(img,(round(height_text/2.5),1))
     boxes = find_Contours(thresh2)
     results = clearBoxes(boxes,letter_spacing,line_spacing)
@@ -143,11 +192,15 @@ if "BTL-DIP" == "BTL-DIP":
         (x, y, w, h) = box
         cv2.rectangle(img, (x, y), (x + w -1, y + h -1), (0, 0, 255), 1)
 
-    # pathXml = 'data/public/' + imgname+'.xml'
-    # a = readXml(pathXml)
-    # for x in a:
-    #     cv2.rectangle(img, (x[0], x[1]), (x[2], x[3]), (36,255,12), 1)
-
+    resultsXml = readXml(pathXml)
+    for x in resultsXml:
+        cv2.rectangle(img, (x[0], x[1]), (x[2], x[3]), (36,255,12), 1)
+    # for box in results:
+    #     print(box[2])
+    #     box[2] = box[0] + box[2]
+    #     box[3] = box[1] + box[3]
+    results = [(box[0], box[1], box[2] + box[0], box[3] + box[1]) for box in results]
+    print(final(results,resultsXml))
     cv2.imshow("thresh2",thresh2)
     cv2.imshow("thresh",thresh)
     cv2.imshow("img",img)

@@ -111,7 +111,7 @@ def build_lines(table_cells):
 
 
 if "_main_" == "_main_":
-    in_file = os.path.join("data/public", "75090.png")
+    in_file = os.path.join("data/public", "75094.png")
     pre_file = os.path.join("data", "pre.png")
     out_file = os.path.join("data", "out.png")
 
@@ -120,7 +120,7 @@ if "_main_" == "_main_":
     pre_processed = pre_process_image(img, pre_file)
     text_boxes = find_text_boxes(pre_processed)
     cells = find_table_in_boxes(text_boxes)
-    # hor_lines, ver_lines = build_lines(cells)
+    hor_lines, ver_lines = build_lines(cells)
 
     # Visualize the result
     vis = img.copy()
@@ -129,14 +129,14 @@ if "_main_" == "_main_":
         (x, y, w, h) = box
         cv2.rectangle(vis, (x, y), (x + w - 2, y + h - 2), (0, 255, 0), 1)
     
-    # print(cells)
-    # cv2.rectangle(vis, (212, 18), (212 + 71, 18 + 17 ), (255, 255, 0), 1)
-    # for line in hor_lines:
-    #     [x1, y1, x2, y2] = line
-    #     cv2.line(vis, (x1, y1), (x2, y2), (0, 0, 255), 1)
+    print(cells)
+    cv2.rectangle(vis, (212, 18), (212 + 71, 18 + 17 ), (255, 255, 0), 1)
+    for line in hor_lines:
+        [x1, y1, x2, y2] = line
+        cv2.line(vis, (x1, y1), (x2, y2), (0, 0, 255), 1)
 
-    # for line in ver_lines:
-    #     [x1, y1, x2, y2] = line
-    #     cv2.line(vis, (x1, y1), (x2, y2), (0, 0, 255), 1)
+    for line in ver_lines:
+        [x1, y1, x2, y2] = line
+        cv2.line(vis, (x1, y1), (x2, y2), (0, 0, 255), 1)
 
     cv2.imwrite(out_file, vis)
