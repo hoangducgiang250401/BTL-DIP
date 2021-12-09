@@ -40,9 +40,13 @@ def get_htb(boxes):
 def lineSpacing(boxes):
     boxes.sort(key=lambda x: x[1], reverse=False)
     MaxLine = 0
+    a = 0
     for i in range(len(boxes)-1):
-        if MaxLine < (boxes[i + 1][1] - boxes[i][1]) > 10:
-            MaxLine = (boxes[i + 1][1] - boxes[i][1])
+        print((boxes[i + 1][1] - boxes[i][1]))
+        if MaxLine < (boxes[i + 1][1] - boxes[i][1]) and (boxes[i + 1][1] - boxes[i][1]) > 10:
+            MaxLine = MaxLine + (boxes[i + 1][1] - boxes[i][1])
+            a += 1
+    MaxLine /= a
     return MaxLine
         
 
@@ -144,7 +148,7 @@ if "BTL-DIP" == "BTL-DIP":
     height_text = correction[0]
     lineToLine = correction[1]
     letter_spacing = round(height_text*0.75)
-    line_spacing =  lineToLine - round(height_text*1.9)
+    line_spacing =  lineToLine - round(height_text*1.3)
     thresh2 = processImage(img,(round(height_text/2.5),1))
     boxes = find_Contours(thresh2)
     results = clearBoxes(boxes,letter_spacing,line_spacing)
@@ -158,7 +162,13 @@ if "BTL-DIP" == "BTL-DIP":
     results = [(box[0], box[1], box[2] + box[0], box[3] + box[1]) for box in results]
     results.sort(key=lambda x: x[0], reverse=False)
     results.sort(key=lambda x: x[1], reverse=False)
-    final(results,resultsXml)
+    rs = []
+    for r in resultsXml:
+        (a,b,c,d) = r
+        rs.append((a,b,c,d))
+    rs.sort(key=lambda x: x[0], reverse=False)
+    rs.sort(key=lambda x: x[1], reverse=False)
+    final(results,rs)
     cv2.imshow("thresh2",thresh2)
     cv2.imshow("thresh",thresh)
     cv2.imshow("img",img)
