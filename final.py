@@ -42,7 +42,6 @@ def lineSpacing(boxes):
     MaxLine = 0
     a = 0
     for i in range(len(boxes)-1):
-        print((boxes[i + 1][1] - boxes[i][1]))
         if MaxLine < (boxes[i + 1][1] - boxes[i][1]) and (boxes[i + 1][1] - boxes[i][1]) > 10:
             MaxLine = MaxLine + (boxes[i + 1][1] - boxes[i][1])
             a += 1
@@ -55,8 +54,8 @@ def getCorrection(thresh,with_ = 3,height_ = 1):
     thresh = cv2.dilate(thresh, kernel, iterations=1)
     boxes = find_Contours(thresh)
     line_spacing = lineSpacing(boxes)
-    chieucaotb = get_htb(boxes)
-    return [chieucaotb,line_spacing]
+    averageHeight = get_htb(boxes)
+    return [averageHeight,line_spacing]
 
 def testDNA(box1,box2):
     (x, y, w, h) = box1
@@ -69,6 +68,7 @@ def final(results,resultsXml):
     lenArrXml = len(resultsXml)
     lenArrRs = len(results)
     lenArrMin = min(lenArrRs,lenArrXml)
+    sum = 0
     for i in range(lenArrMin):
         if testDNA(resultsXml[i],results[i]):
             (x, y, x1, y1) = resultsXml[i]
@@ -78,10 +78,11 @@ def final(results,resultsXml):
             w = min(x1,x3) - max(x,x2)
             h = min(y1,y3) - max(y,y2)
             areaOverlap = w*h
-            print("vị trí ",i,"có độ chính xác là : ",areaOverlap/(areaXml + areaRs - areaOverlap))
+            print("Vị trí ",i,"có độ chính xác là : ",areaOverlap/(areaXml + areaRs - areaOverlap))
+            sum += areaOverlap/(areaXml + areaRs - areaOverlap)
         else:
-            print("vị trí ",i,"có độ chính xác là : 0")
-    return lenArrMin
+            print("Vị trí ",i,"có độ chính xác là : 0")
+    return sum/lenArrXml
 def getAllOverlaps(boxes,bounds, index):
     overlaps = []
     for i in range(len(boxes)):
@@ -160,15 +161,15 @@ if "BTL-DIP" == "BTL-DIP":
     for x in resultsXml:
         cv2.rectangle(img, (x[0], x[1]), (x[2], x[3]), (36,255,12), 1)
     results = [(box[0], box[1], box[2] + box[0], box[3] + box[1]) for box in results]
-    results.sort(key=lambda x: x[0], reverse=False)
-    results.sort(key=lambda x: x[1], reverse=False)
+    results.sort(key=lambda x: x[0], reverse=True)
+    results.sort(key=lambda x: x[1], reverse=True)
     rs = []
     for r in resultsXml:
         (a,b,c,d) = r
         rs.append((a,b,c,d))
-    rs.sort(key=lambda x: x[0], reverse=False)
-    rs.sort(key=lambda x: x[1], reverse=False)
-    final(results,rs)
+    rs.sort(key=lambda x: x[0], reverse=True)
+    rs.sort(key=lambda x: x[1], reverse=True)
+    print("IOU: ",final(results,rs))
     cv2.imshow("thresh2",thresh2)
     cv2.imshow("thresh",thresh)
     cv2.imshow("img",img)
