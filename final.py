@@ -13,7 +13,7 @@ def find_Contours(thresh):
     min_text_height_limit=3
     max_text_height_limit=18
 
-    min_text_width_limit=3
+    min_text_width_limit=5
     max_text_width_limit=500
 
     min_text_area_limit=1
@@ -64,31 +64,7 @@ def testDNA(box1,box2):
         return True
     return False
 
-# def final(results,resultsXml):
-#     lenArrXml = len(resultsXml)
-#     lenArrRs = len(results)
-#     lenArrMin = min(lenArrRs,lenArrXml)
-#     sum = 0
-#     boxTrue = 0
-#     for i in range(lenArrMin):
-#         if testDNA(resultsXml[i],results[i]):
-#             (x, y, x1, y1) = resultsXml[i]
-#             (x2, y2, x3, y3) = results[i]
-#             areaXml = (x1 - x)*(y1 - y)
-#             areaRs = (x3 - x2)*(y3 - y2)
-#             w = min(x1,x3) - max(x,x2)
-#             h = min(y1,y3) - max(y,y2)
-#             areaOverlap = w*h
-#             print("Vị trí ",i,"có độ chính xác là : ",areaOverlap/(areaXml + areaRs - areaOverlap))
-#             sum += areaOverlap/(areaXml + areaRs - areaOverlap)
-#             if 0.5 < areaOverlap/(areaXml + areaRs - areaOverlap) <= 1:
-#                 boxTrue += 1
-#         else:
-#             print("Vị trí ",i,"có độ chính xác là : 0")
-#     return boxTrue/lenArrRs
-    # return sum/lenArrXml
-
-def final(results,resultsXml):
+def iou(results,resultsXml):
     lenArrXml = len(resultsXml)
     lenArrRs = len(results)
     lenArrMin = min(lenArrRs,lenArrXml)
@@ -171,36 +147,38 @@ def readXml(pathXml):
     return a
 
 if "BTL-DIP" == "BTL-DIP":
-    imgname = "32"
-    img = cv2.imread("data/public/" + imgname +".png")
-    pathXml = 'data/public/' + imgname+'.xml'
+    imgname = "65"
+    # imgname = "0"
+    img = cv2.imread("data/private/" + imgname +".png")
     
     thresh = processImage(img,(1,1))
     correction = getCorrection(thresh)
     height_text = correction[0]
     lineToLine = correction[1]
     letter_spacing = round(height_text*0.75)
-    line_spacing =  lineToLine - round(height_text*1.3)
+    line_spacing =  lineToLine - round(height_text*1.6)
     thresh2 = processImage(img,(round(height_text/2.5),1))
     boxes = find_Contours(thresh2)
     results = clearBoxes(boxes,letter_spacing,line_spacing)
     for box in results:
         (x, y, w, h) = box
         cv2.rectangle(img, (x, y), (x + w -1, y + h -1), (0, 0, 255), 1)
-
-    resultsXml = readXml(pathXml)
-    for x in resultsXml:
-        cv2.rectangle(img, (x[0], x[1]), (x[2], x[3]), (36,255,12), 1)
-    results = [(box[0], box[1], box[2] + box[0], box[3] + box[1]) for box in results]
-    results.sort(key=lambda x: x[0], reverse=True)
-    results.sort(key=lambda x: x[1], reverse=True)
-    rs = []
-    for r in resultsXml:
-        (a,b,c,d) = r
-        rs.append((a,b,c,d))
-    rs.sort(key=lambda x: x[0], reverse=True)
-    rs.sort(key=lambda x: x[1], reverse=True)
-    print("IOU: ",final(results,rs))
+    #### BEGIN : SHOW XML
+    # pathXml = 'data/public/' + imgname+'.xml'
+    # resultsXml = readXml(pathXml)
+    # for x in resultsXml:
+    #     cv2.rectangle(img, (x[0], x[1]), (x[2], x[3]), (36,255,12), 1)
+    # results = [(box[0], box[1], box[2] + box[0], box[3] + box[1]) for box in results]
+    # results.sort(key=lambda x: x[0], reverse=True)
+    # results.sort(key=lambda x: x[1], reverse=True)
+    # rs = []
+    # for r in resultsXml:
+    #     (a,b,c,d) = r
+    #     rs.append((a,b,c,d))
+    # rs.sort(key=lambda x: x[0], reverse=True)
+    # rs.sort(key=lambda x: x[1], reverse=True)
+    # print("IOU: ",iou(results,rs))
+    #### END : SHOW XML
     cv2.imshow("thresh2",thresh2)
     cv2.imshow("thresh",thresh)
     cv2.imshow("img",img)
