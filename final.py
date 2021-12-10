@@ -64,25 +64,56 @@ def testDNA(box1,box2):
         return True
     return False
 
+# def final(results,resultsXml):
+#     lenArrXml = len(resultsXml)
+#     lenArrRs = len(results)
+#     lenArrMin = min(lenArrRs,lenArrXml)
+#     sum = 0
+#     boxTrue = 0
+#     for i in range(lenArrMin):
+#         if testDNA(resultsXml[i],results[i]):
+#             (x, y, x1, y1) = resultsXml[i]
+#             (x2, y2, x3, y3) = results[i]
+#             areaXml = (x1 - x)*(y1 - y)
+#             areaRs = (x3 - x2)*(y3 - y2)
+#             w = min(x1,x3) - max(x,x2)
+#             h = min(y1,y3) - max(y,y2)
+#             areaOverlap = w*h
+#             print("Vị trí ",i,"có độ chính xác là : ",areaOverlap/(areaXml + areaRs - areaOverlap))
+#             sum += areaOverlap/(areaXml + areaRs - areaOverlap)
+#             if 0.5 < areaOverlap/(areaXml + areaRs - areaOverlap) <= 1:
+#                 boxTrue += 1
+#         else:
+#             print("Vị trí ",i,"có độ chính xác là : 0")
+#     return boxTrue/lenArrRs
+    # return sum/lenArrXml
+
 def final(results,resultsXml):
     lenArrXml = len(resultsXml)
     lenArrRs = len(results)
     lenArrMin = min(lenArrRs,lenArrXml)
     sum = 0
-    for i in range(lenArrMin):
-        if testDNA(resultsXml[i],results[i]):
-            (x, y, x1, y1) = resultsXml[i]
-            (x2, y2, x3, y3) = results[i]
-            areaXml = (x1 - x)*(y1 - y)
-            areaRs = (x3 - x2)*(y3 - y2)
-            w = min(x1,x3) - max(x,x2)
-            h = min(y1,y3) - max(y,y2)
-            areaOverlap = w*h
-            print("Vị trí ",i,"có độ chính xác là : ",areaOverlap/(areaXml + areaRs - areaOverlap))
-            sum += areaOverlap/(areaXml + areaRs - areaOverlap)
-        else:
-            print("Vị trí ",i,"có độ chính xác là : 0")
-    return sum/lenArrXml
+    boxTrue = 0
+    for i in range(lenArrRs):
+        accuracy = 0
+        for j in range(lenArrXml):
+            if testDNA(results[i],resultsXml[j]):
+                (x, y, x1, y1) = resultsXml[j]
+                (x2, y2, x3, y3) = results[i]
+                areaXml = (x1 - x)*(y1 - y)
+                areaRs = (x3 - x2)*(y3 - y2)
+                w = min(x1,x3) - max(x,x2)
+                h = min(y1,y3) - max(y,y2)
+                areaOverlap = w*h
+                if accuracy < areaOverlap/(areaXml + areaRs - areaOverlap) <=1:
+                    accuracy = areaOverlap/(areaXml + areaRs - areaOverlap)
+        print("độ chính xác của box ",i," là :",accuracy)
+        if 0.5 < accuracy <= 1:
+            boxTrue += 1
+    print("tổng số box là : ",lenArrRs)
+    return boxTrue/lenArrRs
+    # return sum/lenArrXml
+
 def getAllOverlaps(boxes,bounds, index):
     overlaps = []
     for i in range(len(boxes)):
