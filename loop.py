@@ -2,6 +2,9 @@ import cv2
 import numpy as ny
 import xml.etree.ElementTree as ET
 
+import os
+
+
 def processImage(img,morph_size):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 10)
@@ -45,6 +48,8 @@ def lineSpacing(boxes):
         if MaxLine < (boxes[i + 1][1] - boxes[i][1]) and (boxes[i + 1][1] - boxes[i][1]) > 10:
             MaxLine = MaxLine + (boxes[i + 1][1] - boxes[i][1])
             a += 1
+    if a == 0:
+        return 10
     MaxLine /= a
     return MaxLine
         
@@ -67,7 +72,7 @@ def testDNA(box1,box2):
 def iou(results,resultsXml):
     lenArrXml = len(resultsXml)
     lenArrRs = len(results)
-    lenArrMin = min(lenArrRs,lenArrXml)
+    lenArrMax = max(lenArrRs,lenArrXml)
     sum = 0
     boxTrue = 0
     for i in range(lenArrRs):
@@ -81,13 +86,13 @@ def iou(results,resultsXml):
                 w = min(x1,x3) - max(x,x2)
                 h = min(y1,y3) - max(y,y2)
                 areaOverlap = w*h
-                if accuracy < areaOverlap/(areaXml + areaRs - areaOverlap) <=1:
+                if accuracy < areaOverlap/(areaXml + areaRs - areaOverlap) <=1:#
                     accuracy = areaOverlap/(areaXml + areaRs - areaOverlap)
         print("độ chính xác của box ",i," là :",accuracy)
         if 0.5 < accuracy <= 1:
             boxTrue += 1
-    print("tổng số box là : ",lenArrRs)
-    return boxTrue/lenArrRs
+    # print("tổng số box là : ",lenArrRs)
+    return boxTrue/lenArrXml
     # return sum/lenArrXml
 
 def getAllOverlaps(boxes,bounds, index):
@@ -147,39 +152,52 @@ def readXml(pathXml):
     return a
 
 if "BTL-DIP" == "BTL-DIP":
-    imgname = "0"
-    # imgname = "0"
-    img = cv2.imread("data/private/" + imgname +".png")
-    
-    thresh = processImage(img,(1,1))
-    correction = getCorrection(thresh)
-    height_text = correction[0]
-    lineToLine = correction[1]
-    letter_spacing = round(height_text*0.75)
-    line_spacing =  lineToLine - round(height_text*1.6)
-    thresh2 = processImage(img,(round(height_text/2.5),1))
-    boxes = find_Contours(thresh2)
-    results = clearBoxes(boxes,letter_spacing,line_spacing)
-    for box in results:
-        (x, y, w, h) = box
-        cv2.rectangle(img, (x, y), (x + w -1, y + h -1), (0, 0, 255), 1)
-    #### BEGIN : SHOW XML
-    # pathXml = 'data/public/' + imgname+'.xml'
-    # resultsXml = readXml(pathXml)
-    # for x in resultsXml:
-    #     cv2.rectangle(img, (x[0], x[1]), (x[2], x[3]), (36,255,12), 1)
-    # results = [(box[0], box[1], box[2] + box[0], box[3] + box[1]) for box in results]
-    # results.sort(key=lambda x: x[0], reverse=True)
-    # results.sort(key=lambda x: x[1], reverse=True)
-    # rs = []
-    # for r in resultsXml:
-    #     (a,b,c,d) = r
-    #     rs.append((a,b,c,d))
-    # rs.sort(key=lambda x: x[0], reverse=True)
-    # rs.sort(key=lambda x: x[1], reverse=True)
-    # print("IOU: ",iou(results,rs))
-    #### END : SHOW XML
-    cv2.imshow("thresh2",thresh2)
-    cv2.imshow("thresh",thresh)
-    cv2.imshow("img",img)
-    cv2.waitKey()
+    folderName = "train"
+    sumIou = 0
+    i = 0
+    for filename in os.listdir(("data/" + folderName)): ##truyen vao duong dan chua thu muc
+        
+        imgname,extension = os.path.splitext(filename)
+        
+        if extension == ".xml":
+            continue
+        i += 1
+        img = cv2.imread("data/" + folderName + "/" + imgname +".png")
+
+        thresh = processImage(img,(1,1))
+        correction = getCorrection(thresh)
+        height_text = correction[0]
+        lineToLine = correction[1]
+        letter_spacing = round(height_text*0.75)
+        line_spacing =  lineToLine - round(height_text*1.55)
+        thresh2 = processImage(img,(round(height_text/2.3),1))
+        boxes = find_Contours(thresh2)
+        results = clearBoxes(boxes,letter_spacing,line_spacing)
+        for box in results:
+            (x, y, w, h) = box
+            cv2.rectangle(img, (x, y), (x + w -1, y + h -1), (0, 0, 255), 1)
+        #### BEGIN : SHOW XML
+        pathXml = 'data/' + folderName + '/' + imgname +'.xml'
+        resultsXml = readXml(pathXml)
+        for x in resultsXml:
+            cv2.rectangle(img, (x[0], x[1]), (x[2], x[3]), (36,255,12), 1)
+        results = [(box[0], box[1], box[2] + box[0], box[3] + box[1]) for box in results]
+        results.sort(key=lambda x: x[0], reverse=True)
+        results.sort(key=lambda x: x[1], reverse=True)
+        rs = []
+        for r in resultsXml:
+            (a,b,c,d) = r
+            rs.append((a,b,c,d))
+        rs.sort(key=lambda x: x[0], reverse=True)
+        rs.sort(key=lambda x: x[1], reverse=True)
+        a = iou(results,rs)
+        sumIou += a
+        print("IOU " + imgname + ": " , a)
+        #### END : SHOW XML
+        # cv2.imshow("thresh2",thresh2)
+        # cv2.imshow("thresh",thresh)
+        cv2.imwrite("data/output/" + imgname + ".png", img)
+        cv2.imshow(imgname,img)
+        cv2.waitKey()
+        # cv2.destroyAllWindows()
+    print("Rank : " , (sumIou/i))
